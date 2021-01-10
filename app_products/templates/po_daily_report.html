@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+Purchase Order Daily Report
+
+<iframe src="/report/purchase_order?po_id={{po_id}}#view=FitH"
+  style="width: 100%; height: 750px;" frameborder="0" scrolling="no">
+  <p>Browser does not support.</p>
+</iframe>
+
+{% endblock %}
