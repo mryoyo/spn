@@ -152,7 +152,7 @@ class ProductStock(models.Model):
     )
 
     def __str__(self):
-        return "รายการสินค้ารับเข้า"
+        return f"{self.product} (S/N: {self.serial_number})"
 
     class Meta:
         verbose_name = "รายการสินค้ารับเข้า"

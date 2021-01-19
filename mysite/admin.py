@@ -4,7 +4,12 @@ from django.template.response import TemplateResponse
 from django.urls import NoReverseMatch, reverse
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _, gettext_lazy
-from django.contrib.admin import AdminSite
+from django.contrib.admin import AdminSite, ModelAdmin
+from django.contrib import admin
+from django.http import FileResponse
+import re
+
+from service_report.services import PDFService
 
 
 class MyAdminSite(AdminSite):
@@ -64,8 +69,10 @@ class MyAdminSite(AdminSite):
             if app_label in app_dict:
                 app_dict[app_label]['models'].append(model_dict)
             else:
+                app_index = getattr(
+                    apps.get_app_config(app_label), "index", 500)
                 app_dict[app_label] = {
-                    'name': apps.get_app_config(app_label).verbose_name,
+                    'name': '[%s] %s' % (app_index, apps.get_app_config(app_label).verbose_name),
                     'app_label': app_label,
                     'app_url': reverse(
                         'admin:app_list',
@@ -121,3 +128,42 @@ class MyAdminSite(AdminSite):
 
 
 custom_admin = MyAdminSite(name="custom_admin")
+
+
+class NotDefinedReport(PDFService):
+    title = "report_not_defined"
+
+
+class ModelAdminWithPDF(ModelAdmin):
+    change_form_template = "admin/change_form_with_pdf_iframe.html"
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+
+        info = self.model._meta.app_label, self.model._meta.model_name
+        my_urls = [
+            path('report/<path:object_id>', self.report_view,
+                 name='%s_%s_report' % info),
+        ]
+        return urls + my_urls
+
+    def report_view(self, request, object_id):
+        pdf = NotDefinedReport()
+        buffer = pdf.get_buffer()
+        return FileResponse(buffer, as_attachment=False, filename='hello.pdf')
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra = extra_context or {}
+        pdf_url = re.compile(
+            r'/(\d+)/change/').sub(r'/report/\1', request.path_info)
+        # print(pdf_url)
+        extra['pdf_url'] = pdf_url
+        return super().change_view(request, object_id,
+                                   form_url, extra_context=extra)
+
+
+def multi_line(value_dict={}):
+    keys = f'<div style="display:inline-block;text-align:right; margin-right:5px;">{"<br>".join(value_dict.keys())}</div>'
+    values = f'<div style="display:inline-block">{"<br>".join(value_dict.values())}</div>'
+    return keys + values

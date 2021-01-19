@@ -3,13 +3,7 @@ from django.forms import TextInput
 from .models import *
 from django.utils.translation import gettext_lazy as _
 
-from mysite.admin import custom_admin
-
-# from django.contrib.admin import AdminSite
-# from django.contrib import admin
-# from django.http import HttpResponse
-
-# from django.urls import path
+from mysite.admin import custom_admin, ModelAdminWithPDF
 
 
 @admin.register(Employee, site=custom_admin)
@@ -36,6 +30,7 @@ class EmployeeAdmin(admin.ModelAdmin):
             'fields': ('code', 'role',)}),
     )
     inlines = [WorkLineInline]
+    search_fields = ('code', 'name',)
 
     def work_lines_name(self, obj):
         return ','.join([str(i.name) for i in obj.work_lines.order_by('name')])
@@ -43,7 +38,7 @@ class EmployeeAdmin(admin.ModelAdmin):
 
 
 @admin.register(WorkLine, site=custom_admin)
-class WorkLineAdmin(admin.ModelAdmin):
+class WorkLineAdmin(ModelAdminWithPDF):
     class MemberInline(admin.TabularInline):
         model = WorkLine.members.through
         extra = 0
@@ -59,8 +54,6 @@ class WorkLineAdmin(admin.ModelAdmin):
     fieldsets = (
         (_(''), {
          'fields': ('name', 'is_active',)}),
-        # (_('ข้อมูลพนักงาน'), {
-        #     'fields': ('members',)}),
     )
     inlines = [MemberInline]
     list_display = ('name',
@@ -80,25 +73,25 @@ class WorkLineAdmin(admin.ModelAdmin):
     get_old_member_count.short_description = "พนักงานเดิม"
 
 
-@admin.register(WorkLineReport, site=custom_admin)
-class WorkLineReportAdmin(admin.ModelAdmin):
+# @admin.register(WorkLineReport, site=custom_admin)
+# class WorkLineReportAdmin(admin.ModelAdmin):
 
-    change_form_template = "admin/report_work_line.html"
+#     change_form_template = "admin/report_work_line.html"
 
-    def has_add_permission(self, request):
-        return False
+#     def has_add_permission(self, request):
+#         return False
 
-    def has_view_permission(self, request, obj=None):
-        return True
+#     def has_view_permission(self, request, obj=None):
+#         return True
 
-    def has_change_permission(self, request, obj=None):
-        return False
+#     def has_change_permission(self, request, obj=None):
+#         return False
 
-    def has_delete_permission(self, request, obj=None):
-        return True
+#     def has_delete_permission(self, request, obj=None):
+#         return True
 
-    list_display = ['work_line_name']
+#     list_display = ['work_line_name']
 
-    def work_line_name(self, obj):
-        return f'{obj.work_line.name}'
-    work_line_name.short_description = "สายเก็บเงิน"
+#     def work_line_name(self, obj):
+#         return f'{obj.work_line.name}'
+#     work_line_name.short_description = "สายเก็บเงิน"

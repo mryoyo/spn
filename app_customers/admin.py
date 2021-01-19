@@ -13,6 +13,7 @@ class CustomerAdmin(admin.ModelAdmin):
             'fields': ('address',)})
     )
     autocomplete_fields = ('address', )
+    search_fields = ('first_name', 'last_name')
 
 
 @admin.register(CustomerAddress, site=custom_admin)

@@ -2,7 +2,7 @@ from django.db.models import F, Count, Sum
 from django.contrib import admin
 from django.forms import TextInput
 from .models import *
-from mysite.admin import custom_admin
+from mysite.admin import custom_admin, ModelAdminWithPDF
 
 
 @admin.register(ProductInfo, site=custom_admin)
@@ -87,25 +87,10 @@ class ProductBrandAdmin(admin.ModelAdmin):
 
 
 @admin.register(PurchaseOrder, site=custom_admin)
-class PurchaseOrderAdmin(admin.ModelAdmin):
+class PurchaseOrderAdmin(ModelAdminWithPDF):
 
-    change_form_template = "admin/report_purchase_order.html"
-
-    def get_urls(self):
-        from django.urls import path
-        urls = super().get_urls()
-        my_urls = [
-            path('daily_report/', self.daily_report_view),
-        ]
-        return my_urls + urls
-
-    def daily_report_view(self, request):
-        from django.template.response import TemplateResponse
-        context = dict(
-            self.admin_site.each_context(request),
-            po_id=1,
-        )
-        return TemplateResponse(request, "po_daily_report.html", context)
+    # def report_view(self, request, *args, **kwargs):
+    #     pass
 
     class StockInline(admin.TabularInline):
         model = PurchaseOrder.items.through
@@ -144,3 +129,9 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
         return obj.productstock_set.all().aggregate(result=Sum('cost_price'))['result']
     get_total_cost_price.short_description = "รวมต้นทุน"
     get_total_cost_price.admin_order_field = "total_cost_price"
+
+
+@admin.register(ProductStock, site=custom_admin)
+class ProductStockAdmin(admin.ModelAdmin):
+
+    search_fields = ('product__code', 'serial_number')
