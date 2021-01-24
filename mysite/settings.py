@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'smart_selects',
     'admin_interface',
     'colorfield',
     'app_products.apps.AppProductsConfig',
@@ -135,3 +136,5 @@ FORMAT_MODULE_PATH = [
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+USE_DJANGO_JQUERY = True

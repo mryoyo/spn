@@ -11,18 +11,28 @@ from mysite.admin import custom_admin, multi_line
 @admin.register(Contract, site=custom_admin)
 class ContractAdmin(admin.ModelAdmin):
     autocomplete_fields = (
-        'product_stock',
+        # 'product_stock',
         'customer',
         'customer_co',
         'bondsman',
         'bondsman_co',)
-    readonly_fields = ('contract_no', )
+    # readonly_fields = ('contract_no', )
     fieldsets = (
         (_('สินค้า'), {
          'fields': (
              'contract_no',
              'status',
+             'product',
              'product_stock',
+         )}),
+        (_('เช่าซื้อ'), {
+         'fields': (
+             'sales_price',
+             'down_rate',
+             'down_price',
+             'time_count',
+             'per_time_price',
+             'comm_rate',
              'date_start',
              'date_effective',
              'day_to_pay',
@@ -48,6 +58,8 @@ class ContractAdmin(admin.ModelAdmin):
             "สถานะ": f'<strong>{obj.get_status_display()}</strong>',
             "ทำสัญญา": f'<strong>{date_format(obj.date_start, use_l10n=True)}</strong>',
             "งวดแรก": f'<strong>{date_format(obj.date_effective, use_l10n=True)}</strong>',
+            "ราคาเช่าซื้อ": f'<strong>{obj.sales_price:,.0f} บาท</strong>',
+            "ค่างวด": f'<strong>{obj.per_time_price:,.0f} บาท x {obj.time_count} งวด</strong>',
         })
         return format_html(raw)
     contract_info.short_description = "ข้อมูลสัญญา"
@@ -145,11 +157,19 @@ class MonthlyPaymentAdmin(admin.ModelAdmin):
 
 @admin.register(ActualPay, site=custom_admin)
 class ActualPayAdmin(admin.ModelAdmin):
-    autocomplete_fields = ('for_month', 'tr_book_no')
+    autocomplete_fields = ('tr_book_no',)
 
     fieldsets = (
         ('รายการชำระเงิน', {
-            'fields': ('for_month', 'amount', 'collector', 'tr_book_no', 'tr_no', 'date_pay', 'date_add')
+            'fields': (
+                'contract',
+                'for_month',
+                'amount',
+                'collector',
+                'tr_book_no',
+                'tr_no',
+                'date_pay',
+                'date_add')
         }),
         ('การรับรอง', {
             'fields': ('approver', 'date_approve')

@@ -152,7 +152,15 @@ class ProductStock(models.Model):
     )
 
     def __str__(self):
-        return f"{self.product} (S/N: {self.serial_number})"
+        if self.contracts() == None:
+            return f"S/N: {self.serial_number}"
+        else:
+            return f"S/N: {self.serial_number}"
+            # return f"***ขายแล้ว*** S/N: {self.serial_number}"
+
+    def contracts(self):
+        contracts = self.contract_set.all()
+        return f'{contracts.first()}' if contracts.exists() else None
 
     class Meta:
         verbose_name = "รายการสินค้ารับเข้า"

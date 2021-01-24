@@ -133,5 +133,11 @@ class PurchaseOrderAdmin(ModelAdminWithPDF):
 
 @admin.register(ProductStock, site=custom_admin)
 class ProductStockAdmin(admin.ModelAdmin):
-
     search_fields = ('product__code', 'serial_number')
+    list_display = ('product', 'serial_number',
+                    'cost_price', 'related_contract')
+
+    def related_contract(self, obj):
+        contracts = obj.contract_set.all()
+        return f'{contracts.first()}' if contracts.exists() else ''
+    related_contract.short_description = "สัญญาเช่าซื้อ"

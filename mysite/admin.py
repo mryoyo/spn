@@ -72,7 +72,8 @@ class MyAdminSite(AdminSite):
                 app_index = getattr(
                     apps.get_app_config(app_label), "index", 500)
                 app_dict[app_label] = {
-                    'name': '[%s] %s' % (app_index, apps.get_app_config(app_label).verbose_name),
+                    # 'name': '[%s] %s' % (app_index, apps.get_app_config(app_label).verbose_name),
+                    'name': f'{apps.get_app_config(app_label).verbose_name}',
                     'app_label': app_label,
                     'app_url': reverse(
                         'admin:app_list',

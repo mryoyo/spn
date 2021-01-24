@@ -3,6 +3,8 @@ from django.db import models
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _
 
+from smart_selects.db_fields import ChainedForeignKey
+
 
 class Contract(models.Model):
     contract_no = models.CharField(
@@ -21,10 +23,57 @@ class Contract(models.Model):
         db_index=True,
     )
 
-    product_stock = models.ForeignKey(
-        'app_products.ProductStock',
-        verbose_name='สินค้ารับเข้า',
+    product = models.ForeignKey(
+        'app_products.ProductInfo',
+        verbose_name="สินค้า",
         on_delete=models.RESTRICT
+    )
+
+    product_stock = ChainedForeignKey(
+        'app_products.ProductStock',
+        verbose_name='หมายเลขตัวเครื่อง',
+        on_delete=models.RESTRICT,
+        chained_field="product",
+        chained_model_field="product",
+        show_all=False,
+        auto_choose=True,
+        sort=True
+    )
+
+    sales_price = models.DecimalField(
+        verbose_name="ราคาเช่าซื้อ (บาท)",
+        max_digits=8,
+        decimal_places=2,
+        help_text="ตัวอย่างเช่น 1500.50 หรือ 100 เป็นต้น"
+    )
+
+    comm_rate = models.IntegerField(
+        verbose_name="จ่ายคอมมิสชั่น",
+        choices=((4, '4%'), (6, '6%'), (8, '8%'))
+    )
+
+    down_rate = models.IntegerField(
+        verbose_name="ดาวน์",
+        choices=((100, '100%'), (75, '75%'), (50, '50%'), (0, '0%'))
+    )
+
+    down_price = models.DecimalField(
+        verbose_name="เงินดาวน์ (บาท)",
+        max_digits=8,
+        decimal_places=2,
+        help_text="ตัวอย่างเช่น 1500.50 หรือ 100 เป็นต้น"
+    )
+
+    time_count = models.IntegerField(
+        verbose_name="จำนวนงวด",
+        choices=[(x, str(x)) for x in range(1, 25)]
+    )
+
+    per_time_price = models.DecimalField(
+        verbose_name="ค่างวด (บาท)",
+        max_digits=8,
+        decimal_places=2,
+        help_text="ตัวอย่างเช่น 1500.50 หรือ 100 เป็นต้น"
     )
 
     customer = models.ForeignKey(
@@ -227,7 +276,7 @@ class MonthlyPayment(models.Model):
     )
 
     def __str__(self):
-        return f'งวดชำระเดือน {self.get_for_month_display()} {self.contract}'
+        return f'งวดชำระเดือน {self.get_for_month_display()}'
 
     class Meta:
         verbose_name = "งวดชำระประจำเดือน"
@@ -235,10 +284,21 @@ class MonthlyPayment(models.Model):
 
 
 class ActualPay(models.Model):
-    for_month = models.ForeignKey(
+    contract = models.ForeignKey(
+        'app_contracts.Contract',
+        verbose_name="สัญญาเช่าซื้อ",
+        on_delete=models.CASCADE,
+    )
+
+    for_month = ChainedForeignKey(
         'app_contracts.MonthlyPayment',
         verbose_name="ประจำเดือน",
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        chained_field="contract",
+        chained_model_field="contract",
+        show_all=False,
+        auto_choose=True,
+        sort=True
     )
 
     amount = models.DecimalField(
@@ -253,6 +313,7 @@ class ActualPay(models.Model):
         verbose_name="พนักงานเก็บเงิน",
         on_delete=models.RESTRICT,
         related_name="pay_collector",
+        limit_choices_to={'role': '2'},
     )
 
     approver = models.ForeignKey(
@@ -262,6 +323,7 @@ class ActualPay(models.Model):
         related_name="pay_approver",
         null=True,
         blank=True,
+        limit_choices_to={'role': '3'},
     )
 
     date_pay = models.DateField(

@@ -8,32 +8,35 @@ class Customer(models.Model):
         verbose_name_plural = "ข้อมูลลูกค้า"
 
     id_card_no = models.CharField(
+        verbose_name="เลขประจำตัวประชาชน",
         max_length=17,
         db_index=True,
         unique=True,
         help_text="x-xxxx-xxxxx-xx-x"
     )
     title = models.CharField(
-        _('title'),
+        verbose_name="คำนำหน้า",
         max_length=4,
         choices=(('mr', 'นาย'), ('mrs', 'นาง'), ('miss', 'นางสาว'))
     )
 
     first_name = models.CharField(
-        _('first name'),
+        verbose_name=_('first name'),
         max_length=32,
         blank=False
     )
 
     last_name = models.CharField(
-        _('last name'),
+        verbose_name=_('last name'),
         max_length=32,
         blank=False
     )
 
-    date_of_birth = models.DateField()
+    date_of_birth = models.DateField(
+        verbose_name="วันเกิด"
+    )
     marital_status = models.CharField(
-        _("marital status"),
+        verbose_name="สถานะสมรส",
         max_length=1,
         choices=(
             ('S', 'โสด'), ('M', 'สมรส'), ('D', 'หย่าร้าง'), ('W', 'หม้าย')
