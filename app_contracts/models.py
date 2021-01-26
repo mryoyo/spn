@@ -177,6 +177,34 @@ class ReceiptBook(models.Model):
         db_index=True,
     )
 
+    created_at = models.DateTimeField(
+        verbose_name="วันที่สร้างรายการ",
+        auto_now_add=True,
+        editable=False,
+    )
+
+    updated_at = models.DateTimeField(
+        verbose_name="วันที่แก้ไขรายการล่าสุด",
+        auto_now=True,
+    )
+
+    def __str__(self):
+        return f'เล่มใบเสร็จที่ {self.book_no}'
+
+    class Meta:
+        verbose_name = "เล่มใบเสร็จ"
+        verbose_name_plural = "เล่มใบเสร็จ"
+
+
+class ReceiptBookRequest(models.Model):
+
+    book = models.ForeignKey(
+        'ReceiptBook',
+        verbose_name="เล่มใบเสร็จ",
+        on_delete=models.RESTRICT,
+        unique=True,
+    )
+
     book_group = models.CharField(
         verbose_name="หมวด",
         max_length=16,
@@ -247,11 +275,11 @@ class ReceiptBook(models.Model):
     )
 
     def __str__(self):
-        return f'เล่มใบเสร็จที่ {self.book_no}'
+        return f'เบิกเล่มใบเสร็จที่ {self.book.book_no}'
 
     class Meta:
-        verbose_name = "เล่มใบเสร็จ"
-        verbose_name_plural = "เล่มใบเสร็จ"
+        verbose_name = "เบิกเล่มใบเสร็จ"
+        verbose_name_plural = "เบิกเล่มใบเสร็จ"
 
 
 class MonthlyPayment(models.Model):
@@ -299,6 +327,19 @@ class ActualPay(models.Model):
         show_all=False,
         auto_choose=True,
         sort=True
+    )
+
+    customer = ChainedForeignKey(
+        'app_customers.Customer',
+        verbose_name="ลูกค้า",
+        on_delete=models.CASCADE,
+        chained_field="contract",
+        chained_model_field="customer",
+        show_all=False,
+        auto_choose=True,
+        sort=True,
+        null=True,
+        blank=True,
     )
 
     amount = models.DecimalField(

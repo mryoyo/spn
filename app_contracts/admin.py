@@ -10,13 +10,26 @@ from mysite.admin import custom_admin, multi_line
 
 @admin.register(Contract, site=custom_admin)
 class ContractAdmin(admin.ModelAdmin):
+    def get_form(self, request, obj=None, **kwargs):
+        kwargs.update({
+            'help_texts': {
+                'get_comm_price': "คำนวณอัตโนมัติหลังจากกดบันทึก"
+            }
+        })
+        return super().get_form(request, obj, **kwargs)
+
+    class ActualPayInline(admin.StackedInline):
+        model = ActualPay
+        extra = 0
+        max_num = 1
+
     autocomplete_fields = (
         # 'product_stock',
         'customer',
         'customer_co',
         'bondsman',
         'bondsman_co',)
-    # readonly_fields = ('contract_no', )
+    readonly_fields = ('get_comm_price',)
     fieldsets = (
         (_('สินค้า'), {
          'fields': (
@@ -32,7 +45,7 @@ class ContractAdmin(admin.ModelAdmin):
              'down_price',
              'time_count',
              'per_time_price',
-             'comm_rate',
+             'comm_rate', 'get_comm_price',
              'date_start',
              'date_effective',
              'day_to_pay',
@@ -42,6 +55,7 @@ class ContractAdmin(admin.ModelAdmin):
         (_('พนักงานขาย / ตรวจสอบ'), {
             'fields': ('seller', 'auditor')}),
     )
+    inlines = [ActualPayInline]
 
     list_display = (
         'contract_no',
@@ -52,6 +66,14 @@ class ContractAdmin(admin.ModelAdmin):
 
     search_fields = ('contract_no',)
     list_filter = ('status', 'date_start')
+
+    def get_comm_price(self, obj):
+        import decimal
+        if obj.id == None:
+            return "0.00"
+        else:
+            return f"{obj.sales_price * (decimal.Decimal(obj.comm_rate) / decimal.Decimal(100)):,.2F}"
+    get_comm_price.short_description = "จ่ายคอมมิสชั่น (บาท)"
 
     def contract_info(self, obj):
         raw = multi_line({
@@ -113,10 +135,16 @@ class ContractAdmin(admin.ModelAdmin):
 
 @admin.register(ReceiptBook, site=custom_admin)
 class ReceiptBookAdmin(admin.ModelAdmin):
+    search_fields = ('book_no',)
+    list_display = ('book_no',)
+
+
+@admin.register(ReceiptBookRequest, site=custom_admin)
+class ReceiptBookRequestAdmin(admin.ModelAdmin):
     readonly_fields = ('item_no',)
     fields = (
         'item_no',
-        'book_no',
+        'book',
         'book_group',
         'tr_from',
         'tr_to',
@@ -129,7 +157,7 @@ class ReceiptBookAdmin(admin.ModelAdmin):
 
     list_display = (
         'item_no',
-        'book_no',
+        'get_book_no',
         'tr_from',
         'tr_to',
         'requester',
@@ -141,7 +169,10 @@ class ReceiptBookAdmin(admin.ModelAdmin):
         'approved_at'
     )
 
-    search_fields = ('book_no',)
+    # search_fields = ('book',)
+
+    def get_book_no(self, obj):
+        return obj.book.book_no
 
     def item_no(self, obj):
         return f'WDBIL{obj.id:08d}' if obj.id != None else ""
@@ -151,18 +182,29 @@ class ReceiptBookAdmin(admin.ModelAdmin):
 
 @admin.register(MonthlyPayment, site=custom_admin)
 class MonthlyPaymentAdmin(admin.ModelAdmin):
+    # class ActualPayInline(admin.StackedInline):
+    #     model = ActualPay
+    #     extra = 0
+    # inlines = [ActualPayInline]
+
     autocomplete_fields = ('contract', )
     search_fields = ('contract__contract_no',)
+    list_display = ('contract', 'for_month', 'get_total_pay')
+
+    def get_total_pay(self, obj):
+        return obj.actualpay_set.count()
+    get_total_pay.short_description = "ยอดเงินที่ชำระแล้ว"
 
 
 @admin.register(ActualPay, site=custom_admin)
 class ActualPayAdmin(admin.ModelAdmin):
     autocomplete_fields = ('tr_book_no',)
-
+    # readonly_fields = ('customer',)
     fieldsets = (
         ('รายการชำระเงิน', {
             'fields': (
                 'contract',
+                'customer',
                 'for_month',
                 'amount',
                 'collector',
