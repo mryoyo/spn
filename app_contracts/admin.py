@@ -138,14 +138,22 @@ class ReceiptBookAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return False
 
-    def has_change_permission(self, request, obj=None):
-        return False
+    # def has_change_permission(self, request, obj=None):
+    #     return False
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
 
     search_fields = ('book_no',)
-    list_display = ('book_group', 'book_no',)
+    list_display = ('__str__', 'get_received_at', 'get_requested_at',)
+
+    def get_received_at(self, obj):
+        return obj.book_receiving.received_at if obj.book_receiving != None else "-"
+    get_received_at.short_description = "วันที่รับ"
+
+    def get_requested_at(self, obj):
+        return obj.receiptbookrequest.requested_at if obj.receiptbookrequest != None else "-"
+    get_requested_at.short_description = "วันที่เบิก"
 
 
 @admin.register(ReceiptBookRequest, site=custom_admin)
@@ -194,11 +202,11 @@ class ReceiptBookReceiveAdmin(admin.ModelAdmin):
         def has_add_permission(self, request, obj=None):
             return False
 
-        def has_change_permission(self, request, obj=None):
-            return False
+        # def has_change_permission(self, request, obj=None):
+        #     return False
 
-        def has_delete_permission(self, request, obj=None):
-            return False
+        # def has_delete_permission(self, request, obj=None):
+        #     return False
 
         model = ReceiptBook
         can_delete = False
@@ -242,13 +250,13 @@ class ReceiptBookReceiveAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         for i in range(obj.book_no_from, obj.book_no_to + 1):
             query = ReceiptBook.objects.filter(
-                book_group=obj.book_group, book_no=str(i))
+                book_group=obj.book_group, book_no=f'{i:04d}')
             if query.exists():
                 query.update(book_receiving=obj)
             else:
                 ReceiptBook.objects.create(
                     book_group=obj.book_group,
-                    book_no=str(i),
+                    book_no=f'{i:04d}',
                     book_receiving=obj,
                 )
 

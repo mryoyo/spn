@@ -204,7 +204,7 @@ class ReceiptBook(models.Model):
     )
 
     def __str__(self):
-        return f'เล่มใบเสร็จที่ {self.book_no}'
+        return f'เล่มใบเสร็จ {self.book_group}-{self.book_no}'
 
     class Meta:
         verbose_name = "เล่มใบเสร็จ"
@@ -474,7 +474,8 @@ class ActualPay(models.Model):
     tr_no = models.CharField(
         verbose_name="ใบเสร็จ เลขที่",
         max_length=2,
-        default='01'
+        default='01',
+        choices=[(f'{x:02d}', f'{x:02d}') for x in range(1, 51)],
     )
 
     created_at = models.DateTimeField(
