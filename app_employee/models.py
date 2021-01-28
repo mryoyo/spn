@@ -9,6 +9,8 @@ class Employee(models.Model):
         SELLER = '1', _('พนักงานขาย')
         COLLECTOR = '2', _('พนักงานเก็บเงิน')
         AUDITOR = '3', _('พนักงานตรวจสอบ')
+        CLERK = '4', _('พนักงานธุรการ')
+        MANGER = '5', _('ผู้จัดการสาขา')
         OTHERS = '9', _('อื่นๆ')
 
     code = models.CharField(

@@ -135,8 +135,17 @@ class ContractAdmin(admin.ModelAdmin):
 
 @admin.register(ReceiptBook, site=custom_admin)
 class ReceiptBookAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
     search_fields = ('book_no',)
-    list_display = ('book_no',)
+    list_display = ('book_group', 'book_no',)
 
 
 @admin.register(ReceiptBookRequest, site=custom_admin)
@@ -145,7 +154,6 @@ class ReceiptBookRequestAdmin(admin.ModelAdmin):
     fields = (
         'item_no',
         'book',
-        'book_group',
         'tr_from',
         'tr_to',
         'remark',
@@ -157,7 +165,7 @@ class ReceiptBookRequestAdmin(admin.ModelAdmin):
 
     list_display = (
         'item_no',
-        'get_book_no',
+        # 'get_book_no',
         'tr_from',
         'tr_to',
         'requester',
@@ -178,6 +186,71 @@ class ReceiptBookRequestAdmin(admin.ModelAdmin):
         return f'WDBIL{obj.id:08d}' if obj.id != None else ""
     item_no.short_description = "เลขที่รายการ"
     item_no.admin_order_field = 'id'
+
+
+@admin.register(ReceiptBookReceive, site=custom_admin)
+class ReceiptBookReceiveAdmin(admin.ModelAdmin):
+    class ReceiptBookInline(admin.TabularInline):
+        def has_add_permission(self, request, obj=None):
+            return False
+
+        def has_change_permission(self, request, obj=None):
+            return False
+
+        def has_delete_permission(self, request, obj=None):
+            return False
+
+        model = ReceiptBook
+        can_delete = False
+
+    inlines = [ReceiptBookInline]
+
+    fields = (
+        'book_group',
+        'book_no_from', 'book_no_to',
+        'remark',
+        'receiver', 'received_at',
+    )
+
+    list_display = (
+        'get_added_at',
+        'get_item_no',
+        'received_at',
+        'approved_at',
+        'book_group',
+        'book_no_from',
+        'book_no_to',
+        'receiver',
+        'remark',
+    )
+    list_display_links = ('get_item_no',)
+    # list_filter = ('created_at',)
+
+    def get_item_no(self, obj):
+        return f'RECB{obj.id:07d}'
+    get_item_no.short_description = "เลขที่รายการ"
+    get_item_no.admin_order_field = "id"
+
+    def get_added_at(self, obj):
+        return obj.created_at.date()
+        # year = obj.created_at.year + 543
+        # return f'{obj.created_at:%d/%m/}{year}'
+    get_added_at.short_description = "วันที่ทำรายการ"
+    get_added_at.admin_order_field = "created_at"
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        for i in range(obj.book_no_from, obj.book_no_to + 1):
+            query = ReceiptBook.objects.filter(
+                book_group=obj.book_group, book_no=str(i))
+            if query.exists():
+                query.update(book_receiving=obj)
+            else:
+                ReceiptBook.objects.create(
+                    book_group=obj.book_group,
+                    book_no=str(i),
+                    book_receiving=obj,
+                )
 
 
 @admin.register(MonthlyPayment, site=custom_admin)

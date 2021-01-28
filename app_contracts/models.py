@@ -1,5 +1,6 @@
 import calendar
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.utils.html import format_html
 from django.utils.translation import gettext, gettext_lazy as _
 
@@ -177,6 +178,20 @@ class ReceiptBook(models.Model):
         db_index=True,
     )
 
+    book_group = models.CharField(
+        verbose_name="หมวด",
+        max_length=16,
+        null=True,
+        blank=True,
+    )
+
+    book_receiving = models.ForeignKey(
+        'app_contracts.ReceiptBookReceive',
+        verbose_name="รับใบเสร็จ",
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
     created_at = models.DateTimeField(
         verbose_name="วันที่สร้างรายการ",
         auto_now_add=True,
@@ -197,19 +212,10 @@ class ReceiptBook(models.Model):
 
 
 class ReceiptBookRequest(models.Model):
-
-    book = models.ForeignKey(
+    book = models.OneToOneField(
         'ReceiptBook',
         verbose_name="เล่มใบเสร็จ",
         on_delete=models.RESTRICT,
-        unique=True,
-    )
-
-    book_group = models.CharField(
-        verbose_name="หมวด",
-        max_length=16,
-        null=True,
-        blank=True,
     )
 
     remark = models.CharField(
@@ -280,6 +286,83 @@ class ReceiptBookRequest(models.Model):
     class Meta:
         verbose_name = "เบิกเล่มใบเสร็จ"
         verbose_name_plural = "เบิกเล่มใบเสร็จ"
+
+
+class ReceiptBookReceive(models.Model):
+    book_group = models.CharField(
+        verbose_name="หมวด",
+        max_length=16,
+        null=True,
+        blank=True,
+    )
+
+    remark = models.CharField(
+        verbose_name="หมายเหตุ",
+        max_length=256,
+        null=True,
+        blank=True,
+    )
+
+    book_no_from = models.PositiveIntegerField(
+        verbose_name="ตั้งแต่เล่มที่",
+    )
+
+    book_no_to = models.PositiveIntegerField(
+        verbose_name="ถึงเล่มที่",
+    )
+
+    receiver = models.ForeignKey(
+        'app_employee.Employee',
+        verbose_name="ผู้รับ",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name="receipt_receiver"
+    )
+
+    received_at = models.DateField(
+        verbose_name="วันที่รับ",
+        null=True,
+        blank=True,
+    )
+
+    approver = models.ForeignKey(
+        'app_employee.Employee',
+        verbose_name="ผู้รับรอง",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name="receipt_receive_approver"
+    )
+
+    approved_at = models.DateField(
+        verbose_name="วันที่รับรอง",
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        verbose_name="วันที่สร้างรายการ",  # วันที่ทำรายการ
+        auto_now_add=True,
+        editable=False,
+    )
+
+    updated_at = models.DateTimeField(
+        verbose_name="วันที่แก้ไขรายการล่าสุด",
+        auto_now=True,
+    )
+
+    def clean(self):
+        if (self.book_no_from >= self.book_no_to):
+            raise ValidationError(
+                '"ตั้งแต่เล่มที่" หรือ "ถึงเล่มที่" ไม่ถูกต้อง"')
+
+    def __str__(self):
+        return f'รับใบเสร็จตั้งแต่ {self.book_no_from} ถึง {self.book_no_to}'
+
+    class Meta:
+        verbose_name = "รับเล่มใบเสร็จ"
+        verbose_name_plural = "รับเล่มใบเสร็จ"
 
 
 class MonthlyPayment(models.Model):
