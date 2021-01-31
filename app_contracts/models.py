@@ -204,7 +204,11 @@ class ReceiptBook(models.Model):
     )
 
     def __str__(self):
-        return f'เล่มใบเสร็จ {self.book_group}-{self.book_no}'
+        return f'{self.book_group}-{self.book_no}'
+
+    @property
+    def get_str(self):
+        return self.__str__()
 
     class Meta:
         verbose_name = "เล่มใบเสร็จ"
@@ -281,7 +285,7 @@ class ReceiptBookRequest(models.Model):
     )
 
     def __str__(self):
-        return f'เบิกเล่มใบเสร็จที่ {self.book.book_no}'
+        return f'เล่มใบเสร็จ {self.book.book_group}-{self.book.book_no}'
 
     class Meta:
         verbose_name = "เบิกเล่มใบเสร็จ"
@@ -387,29 +391,37 @@ class MonthlyPayment(models.Model):
     )
 
     def __str__(self):
-        return f'งวดชำระเดือน {self.get_for_month_display()}'
+        return f'{self.get_for_month_display()}'
 
     class Meta:
         verbose_name = "งวดชำระประจำเดือน"
         verbose_name_plural = "งวดชำระประจำเดือน"
 
 
-class ActualPay(models.Model):
+class ReceiptBookActivity(models.Model):
+    number = models.CharField(
+        max_length=32,
+        unique=True,
+        verbose_name="เลขที่รายการ"
+    )
+
+    type = models.CharField(
+        verbose_name="ประเภทการใช้",
+        max_length=2,
+        db_index=True,
+        choices=(
+            ('pa', "รับชำระ[ขายเช่าซื้อ]"),
+            ('cp', "ยกเลิกการรับชำระ"),
+            ('un', "ยกเลิกการใช้ใบเสร็จ"),
+        )
+    )
+
     contract = models.ForeignKey(
         'app_contracts.Contract',
         verbose_name="สัญญาเช่าซื้อ",
         on_delete=models.CASCADE,
-    )
-
-    for_month = ChainedForeignKey(
-        'app_contracts.MonthlyPayment',
-        verbose_name="ประจำเดือน",
-        on_delete=models.CASCADE,
-        chained_field="contract",
-        chained_model_field="contract",
-        show_all=False,
-        auto_choose=True,
-        sort=True
+        blank=True,
+        null=True,
     )
 
     customer = ChainedForeignKey(
@@ -425,37 +437,57 @@ class ActualPay(models.Model):
         blank=True,
     )
 
+    receipt_book = models.ForeignKey(
+        'ReceiptBookRequest',
+        verbose_name="เล่มที่ใบเสร็จ",
+        on_delete=models.RESTRICT,
+    )
+
+    receipt_book_requester = ChainedForeignKey(
+        'app_employee.Employee',
+        chained_field='receipt_book',
+        chained_model_field='receipt_requester',
+        verbose_name="ผู้เบิกใบเสร็จ",
+        on_delete=models.RESTRICT,
+        related_name="activity_receipt_request",
+        show_all=False,
+        auto_choose=True,
+    )
+
+    receipt_no = models.CharField(
+        verbose_name="เลขที่ใบเสร็จ",
+        max_length=2,
+        default='01',
+        choices=[(f'{x:02d}', f'{x:02d}') for x in range(1, 51)],
+    )
+
     amount = models.DecimalField(
-        verbose_name="จำนวนเงิน (บาท)",
+        verbose_name="จำนวนเงินตามใบเสร็จ (บาท)",
         max_digits=8,
         decimal_places=2,
-        help_text="ตัวอย่างเช่น 1500.50 หรือ 100 เป็นต้น"
-    )
-
-    collector = models.ForeignKey(
-        'app_employee.Employee',
-        verbose_name="พนักงานเก็บเงิน",
-        on_delete=models.RESTRICT,
-        related_name="pay_collector",
-        limit_choices_to={'role': '2'},
-    )
-
-    approver = models.ForeignKey(
-        'app_employee.Employee',
-        verbose_name="ผู้รับรอง",
-        on_delete=models.RESTRICT,
-        related_name="pay_approver",
-        null=True,
+        help_text="ตัวอย่างเช่น 1500.50 หรือ 100 เป็นต้น",
         blank=True,
-        limit_choices_to={'role': '3'},
+        null=True,
     )
 
-    date_pay = models.DateField(
+    receipt_user = models.ForeignKey(
+        'app_employee.Employee',
+        verbose_name="ผู้ใช้ใบเสร็จ",
+        on_delete=models.RESTRICT,
+        related_name="activity_receipt_use"
+    )
+
+    date_use = models.DateField(
         verbose_name="วันที่ใช้ใบเสร็จ",
     )
 
-    date_add = models.DateField(
-        verbose_name="วันที่บันทึก",
+    receipt_approver = models.ForeignKey(
+        'app_employee.Employee',
+        verbose_name="ผู้รับรอง",
+        on_delete=models.RESTRICT,
+        related_name="activity_receipt_approve",
+        null=True,
+        blank=True,
     )
 
     date_approve = models.DateField(
@@ -464,22 +496,8 @@ class ActualPay(models.Model):
         blank=True,
     )
 
-    tr_book_no = models.ForeignKey(
-        'app_contracts.ReceiptBook',
-        verbose_name="ใบเสร็จ เล่มที่",
-        on_delete=models.CASCADE,
-        default=1
-    )
-
-    tr_no = models.CharField(
-        verbose_name="ใบเสร็จ เลขที่",
-        max_length=2,
-        default='01',
-        choices=[(f'{x:02d}', f'{x:02d}') for x in range(1, 51)],
-    )
-
     created_at = models.DateTimeField(
-        verbose_name="วันที่สร้างรายการ",
+        verbose_name="วันที่บันทึก",
         auto_now_add=True,
         editable=False,
     )

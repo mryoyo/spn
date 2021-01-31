@@ -18,10 +18,33 @@ class ContractAdmin(admin.ModelAdmin):
         })
         return super().get_form(request, obj, **kwargs)
 
-    class ActualPayInline(admin.StackedInline):
-        model = ActualPay
-        extra = 0
-        max_num = 1
+    # class ActualPayInline(admin.StackedInline):
+    #     def has_change_permission(self, request, obj, *args, **kwargs):
+    #         return False
+
+    #     verbose_name = "การชำระเงินดาวน์"
+    #     model = ActualPay
+    #     extra = 1
+    #     max_num = 1
+    #     autocomplete_fields = ('tr_book_no',)
+    #     fieldsets = (
+    #         ('', {
+    #             'fields': (
+    #                 'contract',
+    #                 'customer',
+    #                 'for_month',
+    #                 'amount',
+    #                 'collector',
+    #                 'tr_book_no',
+    #                 'tr_no',
+    #                 'date_pay',
+    #                 'date_add')
+    #         }),
+    #         ('การรับรอง', {
+    #             'fields': ('approver', 'date_approve')
+    #         })
+    #     )
+    # inlines = [ActualPayInline]
 
     autocomplete_fields = (
         # 'product_stock',
@@ -55,7 +78,6 @@ class ContractAdmin(admin.ModelAdmin):
         (_('พนักงานขาย / ตรวจสอบ'), {
             'fields': ('seller', 'auditor')}),
     )
-    inlines = [ActualPayInline]
 
     list_display = (
         'contract_no',
@@ -135,17 +157,15 @@ class ContractAdmin(admin.ModelAdmin):
 
 @admin.register(ReceiptBook, site=custom_admin)
 class ReceiptBookAdmin(admin.ModelAdmin):
-    def has_add_permission(self, request, obj=None):
+
+    def has_module_permission(self, request):
         return False
 
-    # def has_change_permission(self, request, obj=None):
-    #     return False
-
-    # def has_delete_permission(self, request, obj=None):
-    #     return False
-
-    search_fields = ('book_no',)
+    search_fields = ('book_group', 'book_no',)
     list_display = ('__str__', 'get_received_at', 'get_requested_at',)
+
+    def get_full_name(self, obj):
+        return obj.__str__()
 
     def get_received_at(self, obj):
         return obj.book_receiving.received_at if obj.book_receiving != None else "-"
@@ -202,16 +222,16 @@ class ReceiptBookReceiveAdmin(admin.ModelAdmin):
         def has_add_permission(self, request, obj=None):
             return False
 
-        # def has_change_permission(self, request, obj=None):
-        #     return False
+        def has_change_permission(self, request, obj=None):
+            return False
 
-        # def has_delete_permission(self, request, obj=None):
-        #     return False
+        def has_delete_permission(self, request, obj=None):
+            return False
 
         model = ReceiptBook
         can_delete = False
 
-    inlines = [ReceiptBookInline]
+    # inlines = [ReceiptBookInline]
 
     fields = (
         'book_group',
@@ -263,10 +283,9 @@ class ReceiptBookReceiveAdmin(admin.ModelAdmin):
 
 @admin.register(MonthlyPayment, site=custom_admin)
 class MonthlyPaymentAdmin(admin.ModelAdmin):
-    # class ActualPayInline(admin.StackedInline):
-    #     model = ActualPay
-    #     extra = 0
-    # inlines = [ActualPayInline]
+
+    def has_module_permission(self, request):
+        return False
 
     autocomplete_fields = ('contract', )
     search_fields = ('contract__contract_no',)
@@ -277,24 +296,61 @@ class MonthlyPaymentAdmin(admin.ModelAdmin):
     get_total_pay.short_description = "ยอดเงินที่ชำระแล้ว"
 
 
-@admin.register(ActualPay, site=custom_admin)
-class ActualPayAdmin(admin.ModelAdmin):
-    autocomplete_fields = ('tr_book_no',)
-    # readonly_fields = ('customer',)
+# @admin.register(ActualPay, site=custom_admin)
+# class ActualPayAdmin(admin.ModelAdmin):
+#     autocomplete_fields = ('tr_book_no',)
+#     fieldsets = (
+#         ('รายการชำระเงิน', {
+#             'fields': (
+#                 'contract',
+#                 'customer',
+#                 'for_month',
+#                 'amount',
+#                 'collector',
+#                 'tr_book_no',
+#                 'tr_no',
+#                 'date_pay',
+#                 'date_add')
+#         }),
+#         ('การรับรอง', {
+#             'fields': ('approver', 'date_approve')
+#         })
+#     )
+
+#     list_display = (
+#         'contract',
+#         'for_month',
+#         'amount',
+#         'tr_book_no',
+#         'tr_no',
+#     )
+
+#     list_filter = (
+#         'for_month',
+#     )
+
+
+@admin.register(ReceiptBookActivity, site=custom_admin)
+class ReceiptBookActivityAdmin(admin.ModelAdmin):
     fieldsets = (
-        ('รายการชำระเงิน', {
+        ('', {
             'fields': (
+                'number',
+                'type',
+                'receipt_book',
+                'receipt_no',
+                'receipt_book_requester',
+                'receipt_user',
+                'date_use',
                 'contract',
                 'customer',
-                'for_month',
                 'amount',
-                'collector',
-                'tr_book_no',
-                'tr_no',
-                'date_pay',
-                'date_add')
+            )
         }),
         ('การรับรอง', {
-            'fields': ('approver', 'date_approve')
+            'fields': (
+                'receipt_approver',
+                'date_approve'
+            )
         })
     )

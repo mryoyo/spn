@@ -43,10 +43,10 @@ class WorkLineAdmin(ModelAdminWithPDF):
         model = WorkLine.members.through
         extra = 0
         can_delete = False
-        readonly_fields = ('employee', 'is_current', 'date_joined')
+        # readonly_fields = ('employee', 'is_current', 'date_joined')
 
         def has_add_permission(self, request, obj):
-            return False
+            return True
 
     formfield_overrides = {
         models.CharField: {'widget': TextInput(attrs={'autocomplete': 'off', 'class': 'vTextField'})},
@@ -73,25 +73,24 @@ class WorkLineAdmin(ModelAdminWithPDF):
     get_old_member_count.short_description = "พนักงานเดิม"
 
 
-# @admin.register(WorkLineReport, site=custom_admin)
-# class WorkLineReportAdmin(admin.ModelAdmin):
+@admin.register(MemberShip, site=custom_admin)
+class MemberShipAdmin(admin.ModelAdmin):
+    fields = (
+        'workline',
+        'employee',
+        'date_joined'
+    )
 
-#     change_form_template = "admin/report_work_line.html"
+    list_display = (
+        'workline',
+        'employee'
+    )
 
-#     def has_add_permission(self, request):
-#         return False
+    list_display_links = (
+        'workline',
+        'employee'
+    )
 
-#     def has_view_permission(self, request, obj=None):
-#         return True
-
-#     def has_change_permission(self, request, obj=None):
-#         return False
-
-#     def has_delete_permission(self, request, obj=None):
-#         return True
-
-#     list_display = ['work_line_name']
-
-#     def work_line_name(self, obj):
-#         return f'{obj.work_line.name}'
-#     work_line_name.short_description = "สายเก็บเงิน"
+    list_filter = (
+        'workline__name',
+    )
