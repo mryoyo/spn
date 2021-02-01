@@ -33,8 +33,11 @@ class Customer(models.Model):
     )
 
     date_of_birth = models.DateField(
-        verbose_name="วันเกิด"
+        verbose_name="วันเกิด",
+        blank=True,
+        null=True,
     )
+
     marital_status = models.CharField(
         verbose_name="สถานะสมรส",
         max_length=1,
@@ -43,7 +46,18 @@ class Customer(models.Model):
         )
     )
 
-    address = models.ForeignKey('CustomerAddress', on_delete=models.RESTRICT)
+    address = models.ForeignKey(
+        'CustomerAddress',
+        on_delete=models.RESTRICT,
+        verbose_name="ที่อยู่ปัจจุบัน"
+    )
+
+    address_registered = models.ForeignKey(
+        'CustomerAddress',
+        on_delete=models.RESTRICT,
+        verbose_name="ที่อยู่ตามทะเบียนบ้าน",
+        related_name="customer_registered"
+    )
 
     def get_full_name(self):
         return f'{self.get_title_display()}{self.first_name} {self.last_name}'
