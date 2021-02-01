@@ -38,12 +38,33 @@ class Customer(models.Model):
         null=True,
     )
 
+    date_of_birth_be = models.CharField(
+        verbose_name="วัน/เดือน/ปี เกิด",
+        max_length=32,
+        blank=True,
+        null=True,
+    )
+
     marital_status = models.CharField(
         verbose_name="สถานะสมรส",
         max_length=1,
         choices=(
             ('S', 'โสด'), ('M', 'สมรส'), ('D', 'หย่าร้าง'), ('W', 'หม้าย')
         )
+    )
+
+    occupation = models.CharField(
+        verbose_name="อาชีพ",
+        max_length=64,
+        blank=True,
+        null=True,
+    )
+
+    spouse_name = models.CharField(
+        verbose_name="ชื่อ-นามสกุล คู่สมรส",
+        max_length=256,
+        blank=True,
+        null=True
     )
 
     address = models.ForeignKey(

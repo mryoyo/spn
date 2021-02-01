@@ -21,6 +21,9 @@ class CustomerAdmin(admin.ModelAdmin):
                 'last_name',
                 # 'date_of_birth',
                 # 'marital_status',
+                'date_of_birth_be',
+                'occupation',
+                'spouse_name',
             )}),
         (_('ที่อยู่อาศัย'), {
             'fields': ('address', 'address_registered')})
