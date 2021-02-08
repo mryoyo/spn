@@ -60,11 +60,6 @@ class PDFService:
         widths = [5 * cm, 10.5 * cm, 2.5 * cm]
         return Table(data, widths, 2 * [0.7 * cm], style=style, spaceBefore=0.6*cm)
 
-    def get_date_range(self):
-        style = copy.copy(styles['h2'])
-        style.fontSize = 14
-        return Paragraph("สำหรับวันที่ ......................... ถึงวันที่ .........................", style=style)
-
     def get_content(self):
         style = copy.copy(styles['title'])
         return Paragraph("No Content", style=style)
@@ -111,6 +106,7 @@ class PDFService:
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
             buffer,
+            title=self.title,
             pagesize=A4,
             rightMargin=1.5 * cm,
             leftMargin=1.5 * cm,
@@ -120,7 +116,6 @@ class PDFService:
         elements = []
         elements.append(self.get_title())
         elements.append(self.get_subtitle())
-        # elements.append(self.get_date_range())
         elements.append(self.get_content())
 
         if self.get_signature_footer:

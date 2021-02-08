@@ -140,23 +140,13 @@ class PurchaseOrderAdmin(ModelAdminWithPDF):
             else:
                 items[product_code] = {
                     'product_code': item.product.code,
-                    'product_name': item.product.__str__(),
+                    'product_name': f'{item.product.type} {item.product.brand} {item.product.model}',
                     'serial_numbers': [item.serial_number],
                     'cost_price': item.cost_price,
                     'total': item.cost_price
                 }
         pdf = PurchaseOrderReportPDF()
         pdf.data_po_no = order.code
-        # pdf.data_po_items = [
-        #     [
-        #         item['product_code'],
-        #         item['product_name'],
-        #         '\n'.join(item['serial_numbers']),
-        #         len(item['serial_numbers']),
-        #         item['cost_price'],
-        #         item['total']
-        #     ] for item in list(items.values())
-        # ]
         pdf.data_po_items = list(items.values())
         buffer = pdf.get_buffer()
         from django.http import FileResponse
@@ -170,19 +160,19 @@ class PurchaseOrderReportPDF(PDFService):
     def get_content(self):
         data = [
             [
-                self.data_po_no,
+                self.data_po_no if i == 0 else '',
                 item['product_code'],
                 item['product_name'],
                 '\n'.join(item['serial_numbers']),
                 len(item['serial_numbers']),
-                item['cost_price'],
-                item['total']
-            ] for item in self.data_po_items
+                f"{item['cost_price']:,.2F}",
+                f"{item['total']:,.2F}"
+            ] for i, item in enumerate(self.data_po_items)
         ]
         from reportlab.lib.units import cm
         row_heights = [0.7 * cm] + \
-            [((len(i['serial_numbers']) * 0.55) +
-              0.15) * cm for i in self.data_po_items]
+            [((len(i['serial_numbers']) * 0.40) +
+              0.30) * cm for i in self.data_po_items]
         print(row_heights)
         table = self.create_table(
             col_name_and_widths={
@@ -197,6 +187,11 @@ class PurchaseOrderReportPDF(PDFService):
             data=data,
             row_heights=row_heights
         )
+        from reportlab.lib import colors
+        table._addCommand(('GRID', (0, 0), (-1, -1), 0.25, colors.grey))
+        table._addCommand(('ALIGN', (-3, 1), (-3, -1), 'CENTER'))
+        table._addCommand(('ALIGN', (-2, 1), (-1, -1), 'RIGHT'))
+        table._addCommand(('SPAN', (0, 1), (0, -1)))
         return table
 
 

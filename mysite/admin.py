@@ -153,7 +153,7 @@ class ModelAdminWithPDF(ModelAdmin):
     def report_view(self, request, object_id):
         pdf = NotDefinedReport()
         buffer = pdf.get_buffer()
-        return FileResponse(buffer, as_attachment=False, filename='hello.pdf')
+        return FileResponse(buffer, as_attachment=False, filename="report.pdf")
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra = extra_context or {}
