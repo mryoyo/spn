@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.forms import TextInput
 from .models import *
 from mysite.admin import custom_admin, ModelAdminWithPDF
+from service_report.services import PDFService
 
 
 @admin.register(ProductInfo, site=custom_admin)
@@ -89,9 +90,6 @@ class ProductBrandAdmin(admin.ModelAdmin):
 @admin.register(PurchaseOrder, site=custom_admin)
 class PurchaseOrderAdmin(ModelAdminWithPDF):
 
-    # def report_view(self, request, *args, **kwargs):
-    #     pass
-
     class StockInline(admin.TabularInline):
         model = PurchaseOrder.items.through
         extra = 1
@@ -130,9 +128,83 @@ class PurchaseOrderAdmin(ModelAdminWithPDF):
     get_total_cost_price.short_description = "รวมต้นทุน"
     get_total_cost_price.admin_order_field = "total_cost_price"
 
+    def report_view(self, request, object_id):
+        order = PurchaseOrder.objects.get(id=object_id)
+        items = {}
+        for item in order.productstock_set.all():
+            product_code = item.product.code
+            if (product_code in items):
+                items[product_code]['serial_numbers'].append(
+                    item.serial_number)
+                items[product_code]['total'] += item.cost_price
+            else:
+                items[product_code] = {
+                    'product_code': item.product.code,
+                    'product_name': item.product.__str__(),
+                    'serial_numbers': [item.serial_number],
+                    'cost_price': item.cost_price,
+                    'total': item.cost_price
+                }
+        pdf = PurchaseOrderReportPDF()
+        pdf.data_po_no = order.code
+        # pdf.data_po_items = [
+        #     [
+        #         item['product_code'],
+        #         item['product_name'],
+        #         '\n'.join(item['serial_numbers']),
+        #         len(item['serial_numbers']),
+        #         item['cost_price'],
+        #         item['total']
+        #     ] for item in list(items.values())
+        # ]
+        pdf.data_po_items = list(items.values())
+        buffer = pdf.get_buffer()
+        from django.http import FileResponse
+        return FileResponse(buffer, as_attachment=False, filename='hello.pdf')
+
+
+class PurchaseOrderReportPDF(PDFService):
+    title = "รายงานรับเข้าสินค้า"
+    signature_role_left = "ผู้รับสินค้า"
+
+    def get_content(self):
+        data = [
+            [
+                self.data_po_no,
+                item['product_code'],
+                item['product_name'],
+                '\n'.join(item['serial_numbers']),
+                len(item['serial_numbers']),
+                item['cost_price'],
+                item['total']
+            ] for item in self.data_po_items
+        ]
+        from reportlab.lib.units import cm
+        row_heights = [0.7 * cm] + \
+            [((len(i['serial_numbers']) * 0.55) +
+              0.15) * cm for i in self.data_po_items]
+        print(row_heights)
+        table = self.create_table(
+            col_name_and_widths={
+                'เลขที่รับเข้า': 2,
+                'รหัสสินค้า': 1.8,
+                'รายการสินค้า/รุ่นสินค้า': 5.5,
+                'หมายเลขเครื่อง': 3.5,
+                'จำนวน': 1.2,
+                'ต้นทุน/หน่วย': 2,
+                'ต้นทุน (บาท)': 2
+            },
+            data=data,
+            row_heights=row_heights
+        )
+        return table
+
 
 @admin.register(ProductStock, site=custom_admin)
 class ProductStockAdmin(admin.ModelAdmin):
+    def has_module_permission(self, obj):
+        return False
+
     search_fields = ('product__code', 'serial_number')
     list_display = ('product', 'serial_number',
                     'cost_price', 'related_contract')

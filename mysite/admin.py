@@ -8,6 +8,7 @@ from django.contrib.admin import AdminSite, ModelAdmin
 from django.contrib import admin
 from django.http import FileResponse
 import re
+import datetime
 
 from service_report.services import PDFService
 
@@ -158,7 +159,6 @@ class ModelAdminWithPDF(ModelAdmin):
         extra = extra_context or {}
         pdf_url = re.compile(
             r'/(\d+)/change/').sub(r'/report/\1', request.path_info)
-        # print(pdf_url)
         extra['pdf_url'] = pdf_url
         return super().change_view(request, object_id,
                                    form_url, extra_context=extra)
@@ -168,3 +168,7 @@ def multi_line(value_dict={}):
     keys = f'<div style="display:inline-block;text-align:right; margin-right:5px;">{"<br>".join(value_dict.keys())}</div>'
     values = f'<div style="display:inline-block">{"<br>".join(value_dict.values())}</div>'
     return keys + values
+
+
+def toThaiDate(dt=datetime.date.today()):
+    return f'{dt:%d/%m}/{dt.year+543}'
